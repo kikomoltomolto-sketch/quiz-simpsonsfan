@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz de Los Simpson</title>
+<style>
+  :root{
+    --simpson-yellow:#FED90F;
+    --simpson-yellow-dark:#F7C100;
+    --sky-blue:#67A7E3;
+    --sky-blue-light:#A9D2F5;
+    --donut-pink:#F25C9A;
+    --nuclear-green:#6FCB3C;
+    --ink:#1A1A1A;
+    --paper:#FFFDF5;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family: 'Trebuchet MS', 'Comic Sans MS', system-ui, sans-serif;
+    color: var(--ink);
+    min-height:100vh;
+    background: linear-gradient(180deg, var(--sky-blue) 0%, var(--sky-blue-light) 220px, var(--simpson-yellow) 220px, var(--simpson-yellow) 100%);
+    display:flex;
+    justify-content:center;
+    padding: 0 16px 80px;
+  }
+
+  /* === NUBES ESTILO INTRO === */
+  .sky{
+    position:relative;
+    width:100%;
+    max-width:760px;
+    height: 150px;
+    margin-top: 18px;
+    overflow:visible;
+  }
+  .cloud{
+    position:absolute;
+    background:#fff;
+    border-radius: 50px;
+    opacity:0.95;
+  }
+  .cloud::before, .cloud::after{
+    content:"";
+    position:absolute;
+    background:#fff;
+    border-radius:50%;
+  }
+  .c1{ width:120px; height:40px; top:10px; left:0; }
+  .c1::before{ width:60px; height:60px; top:-30px; left:15px; }
+  .c1::after{ width:40px; height:40px; top:-18px; left:65px; }
+
+  .c2{ width:160px; height:46px; top:50px; right:0; }
+  .c2::before{ width:70px; height:70px; top:-34px; left:25px; }
+  .c2::after{ width:50px; height:50px; top:-20px; left:95px; }
+
+  .c3{ width:90px; height:30px; top:95px; left:40%; }
+  .c3::before{ width:46px; height:46px; top:-22px; left:14px; }
+
+  .board{
+    width:100%;
+    max-width:760px;
+  }
+  header{
+    text-align:center;
+    margin: 4px 0 26px;
+  }
+  .chalk-title{
+    font-family: 'Trebuchet MS', 'Comic Sans MS', sans-serif;
+    color: var(--donut-pink);
+    -webkit-text-stroke: 2px var(--ink);
+    font-size: clamp(2.2rem, 7vw, 3.6rem);
+    letter-spacing: 1px;
+    margin: 0 0 6px;
+    font-weight:900;
+  }
+  .subtitle{
+    color: var(--ink);
+    font-size: 1.05rem;
+    margin:0;
+    font-weight:bold;
+  }
+  .card{
+    background: var(--paper);
+    border: 4px solid var(--ink);
+    border-radius: 16px;
+    box-shadow: 8px 8px 0 rgba(0,0,0,0.65);
+    padding: 28px 24px;
+  }
+  #intro-screen .card{ text-align:center; }
+  #intro-screen p{ line-height:1.5; font-size:1.05rem;}
+  .donut{
+    font-size: 3.8rem;
+    display:block;
+    margin-bottom: 8px;
+  }
+  button{
+    font-family: inherit;
+    cursor:pointer;
+    border:3px solid var(--ink);
+    border-radius: 10px;
+    background: var(--simpson-yellow);
+    color: var(--ink);
+    font-weight:bold;
+    font-size: 1rem;
+    padding: 12px 22px;
+    box-shadow: 4px 4px 0 var(--ink);
+    transition: transform .08s ease;
+  }
+  button:hover{ transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--ink); }
+  button:active{ transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--ink); }
+  button:disabled{ opacity:0.5; cursor:default; box-shadow:4px 4px 0 var(--ink); transform:none; }
+
+  .progress-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:14px;
+    font-weight:bold;
+    color: var(--ink);
+  }
+  .progress-bar{
+    width:100%;
+    height:14px;
+    background: rgba(0,0,0,0.12);
+    border-radius: 8px;
+    overflow:hidden;
+    border: 2px solid var(--ink);
+    margin-bottom: 18px;
+  }
+  .progress-fill{
+    height:100%;
+    background: linear-gradient(90deg, var(--donut-pink), var(--nuclear-green));
+    width:0%;
+    transition: width .25s ease;
+  }
+  .question-text{
+    font-size: 1.25rem;
+    margin: 0 0 18px;
+    line-height:1.4;
+    font-weight:bold;
+  }
+  .options{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .option{
+    text-align:left;
+    background: #fff;
+    border:3px solid var(--ink);
+    border-radius:10px;
+    padding: 12px 16px;
+    font-size: 1rem;
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+  .option.correct{
+    background: var(--nuclear-green);
+  }
+  .option.incorrect{
+    background: var(--donut-pink);
+    color:#fff;
+  }
+  .nav-row{
+    margin-top: 22px;
+    display:flex;
+    justify-content:flex-end;
+  }
+  #result-screen .card{ text-align:center; }
+  .score-number{
+    font-size: 4.5rem;
+    font-weight:bold;
+    color: var(--donut-pink);
+    -webkit-text-stroke: 2px var(--ink);
+    margin: 6px 0;
+  }
+  .score-label{
+    font-size:1.2rem;
+    font-weight:bold;
+    margin-bottom: 18px;
+  }
+  .hidden{ display:none; }
+
+  /* === SELECCIÓN DE NIVEL === */
+  .levels-grid{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+  }
+  @media (max-width: 640px){
+    .levels-grid{ grid-template-columns: 1fr; }
+  }
+  .level-card{
+    background:#fff;
+    border:4px solid var(--ink);
+    border-radius:16px;
+    padding: 22px 16px;
+    text-align:center;
+    box-shadow: 6px 6px 0 rgba(0,0,0,0.6);
+    cursor:pointer;
+    transition: transform .1s ease;
+  }
+  .level-card:hover{ transform: translate(-3px,-3px); box-shadow: 9px 9px 0 rgba(0,0,0,0.6); }
+  .level-card:active{ transform: translate(2px,2px); }
+  .level-emoji{ font-size: 2.6rem; display:block; margin-bottom: 8px; }
+  .level-icon{ display:none; }
+  .level-name{
+    font-size:1.4rem;
+    font-weight:900;
+    margin: 6px 0 8px;
+    color: var(--ink);
+    -webkit-text-stroke: 1px var(--ink);
+    letter-spacing: 0.5px;
+  }
+  .level-low .level-name{ color: var(--nuclear-green); }
+  .level-medium .level-name{ color: var(--simpson-yellow-dark); }
+  .level-name-high{
+    color: var(--donut-pink) !important;
+  }
+  .level-desc{ font-size:0.92rem; line-height:1.4; margin:0 0 14px; color:#333; }
+  .level-low{ background: #EAF8E2; }
+  .level-medium{ background: #FFF3CF; }
+  .level-high{ background: #FCE0EA; }
+  .back-link{
+    background:none;
+    border:none;
+    box-shadow:none;
+    color: var(--ink);
+    text-decoration: underline;
+    font-weight:bold;
+    padding: 4px 0;
+    margin-bottom: 10px;
+  }
+  .back-link:hover{ transform:none; box-shadow:none; }
+
+  footer{
+    text-align:center;
+    color:#4a4a4a;
+    font-size:0.8rem;
+    margin-top:24px;
+  }
+</style>
+</head>
+<body>
+
+<div class="board">
+  <div class="sky">
+    <div class="cloud c1"></div>
+    <div class="cloud c2"></div>
+    <div class="cloud c3"></div>
+  </div>
+
+  <header>
+    <h1 class="chalk-title">Quiz de Los Simpson</h1>
+    <p class="subtitle">50 preguntas. ¿Cuánto sabes de Springfield?</p>
+  </header>
+
+  <!-- PANTALLA DE SELECCIÓN DE NIVEL -->
+  <section id="intro-screen">
+    <div class="card">
+      <span class="donut">🍩</span>
+      <p>Elige tu nivel. Cada uno tiene <strong>50 preguntas</strong> y al final obtendrás una calificación del <strong>1 al 10</strong>.</p>
+      <div class="levels-grid">
+        <div class="level-card level-low" data-level="low">
+          <p class="level-name">Nivel bajo</p>
+          <p class="level-desc">Personajes y datos sencillos. Ideal para empezar.</p>
+          <button>Jugar</button>
+        </div>
+        <div class="level-card level-medium" data-level="medium">
+          <p class="level-name">Nivel medio</p>
+          <p class="level-desc">Preguntas sobre episodios concretos, sin ser muy rebuscadas.</p>
+          <button>Jugar</button>
+        </div>
+        <div class="level-card level-high" data-level="high">
+          <p class="level-name level-name-high">Nivel alto</p>
+          <p class="level-desc">Solo para auténticos fans. Datos muy concretos.</p>
+          <button>Jugar</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PANTALLA DE PREGUNTAS -->
+  <section id="quiz-screen" class="hidden">
+    <button class="back-link" id="back-btn">&larr; Elegir otro nivel</button>
+    <div class="progress-row">
+      <span id="progress-text">Pregunta 1 de 50</span>
+      <span id="score-text">Aciertos: 0</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="card">
+      <p class="question-text" id="question-text"></p>
+      <div class="options" id="options-container"></div>
+      <div class="nav-row">
+        <button id="next-btn" disabled>Siguiente</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PANTALLA DE RESULTADO -->
+  <section id="result-screen" class="hidden">
+    <div class="card">
+      <p class="score-label" id="result-headline">¡Quiz terminado!</p>
+      <div class="score-number" id="score-number">0/10</div>
+      <p id="result-detail"></p>
+      <button id="retry-btn">Intentar de nuevo</button>
+    </div>
+  </section>
+
+  <footer>Quiz hecho a mano (bueno, con ayuda de Claude) — sin afiliación oficial con Fox.</footer>
+</div>
+
+<script>
+/* =========================================================
+   1) BANCO DE PREGUNTAS — exactamente 50, todas revisadas
+   ========================================================= */
+const LOW_QUESTIONS = [
+  {q:"¿En qué ciudad ficticia viven Los Simpson?", options:["Springfield","Shelbyville","Capital City","Ogdenville"], answer:0},
+  {q:"¿Cómo se llama la central nuclear donde trabaja Homer?", options:["Central Nuclear de Springfield","Central Burns Co.","Central Eléctrica de Shelbyville","Central Atómica Springfield"], answer:0},
+  {q:"¿Cuál es el nombre completo del jefe de Homer?", options:["Montgomery Burns","Waylon Smithers","Lenny Leonard","Carl Carlson"], answer:0},
+  {q:"¿Cómo se llama el perro de la familia Simpson?", options:["Ayudante de Santa","Bola de Nieve","Pluto","Rex"], answer:0},
+  {q:"¿Cuántos dedos tiene cada personaje en cada mano (sin contar el pulgar)?", options:["4","3","5","2"], answer:0},
+  {q:"¿Cómo se llama el bar favorito de Homer?", options:["Bar de Moe","El Buey Feliz","Taberna de Barney","El Springfield"], answer:0},
+  {q:"¿Cuál es la profesión del Dr. Hibbert?", options:["Médico","Dentista","Abogado","Veterinario"], answer:0},
+  {q:"¿Cómo se llama el profesor de música y coro de la escuela?", options:["Dewey Largo","Seymour Skinner","Elton Hubbard","Tom Hanley"], answer:0},
+  {q:"¿Quién es el director de la escuela primaria de Springfield?", options:["Seymour Skinner","Gary Chalmers","Edward Skinner","Dewey Largo"], answer:0},
+  {q:"¿Cómo se llama la maestra de Bart Simpson en la mayoría de episodios?", options:["Edna Krabappel","Elizabeth Hoover","Melody Bevins","Esther Burns"], answer:0},
+  {q:"¿Qué edad tiene Bart Simpson?", options:["10 años","8 años","12 años","9 años"], answer:0},
+  {q:"¿Qué edad tiene Lisa Simpson?", options:["8 años","6 años","10 años","7 años"], answer:0},
+  {q:"¿Cómo se llama el bebé de la familia Simpson?", options:["Maggie","Molly","Mona","Marge"], answer:0},
+  {q:"¿Cuál es el segundo nombre de Homer?", options:["Jay","John","James","Joseph"], answer:0},
+  {q:"¿Cómo se llaman los padres de Marge?", options:["Clancy y Jacqueline Bouvier","Clancy y Patty Bouvier","Hugo y Jacqueline","Mason y Patty"], answer:0},
+  {q:"¿Cómo se llaman las hermanas gemelas de Marge?", options:["Patty y Selma","Patty y Penny","Selma y Sherri","Patty y Sandra"], answer:0},
+  {q:"¿Quién es el vecino cristiano y devoto de los Simpson?", options:["Ned Flanders","Kirk Van Houten","Lou","Cletus"], answer:0},
+  {q:"¿Cómo se llama la tienda de cómics que frecuenta Bart?", options:["La Tienda del Cómic","Androide's Dungeon","Cómics Springfield","El Búnker del Cómic"], answer:1},
+  {q:"¿Cómo se le conoce comúnmente al dueño de la tienda de cómics?", options:["El Hombre de las Historietas","Milhouse Van Houten","Database","Martin Prince"], answer:0},
+  {q:"¿Quién es el mejor amigo de Bart en la escuela?", options:["Milhouse Van Houten","Nelson Muntz","Ralph Wiggum","Martin Prince"], answer:0},
+  {q:"¿Cómo se llama el matón de la escuela que se burla de Bart?", options:["Nelson Muntz","Jimbo Jones","Dolph","Kearney"], answer:0},
+  {q:"¿Cómo se llama el hijo del jefe de policía Wiggum?", options:["Ralph Wiggum","Eddie","Lou","Sammy"], answer:0},
+  {q:"¿Cuál es el nombre del jefe de policía de Springfield?", options:["Clancy Wiggum","Eddie Sullivan","Lou Walsh","Frank Grimes"], answer:0},
+  {q:"¿Cómo se llama la tienda de conveniencia regentada por Apu?", options:["Kwik-E-Mart","Speedy Mart","Quick Stop","Gas-N-Sip"], answer:0},
+  {q:"¿Cuál es el nombre completo de Apu?", options:["Apu Nahasapeemapetilon","Apu Sanjay Patel","Apu Krishnamurthy","Apu Bhandari"], answer:0},
+  {q:"¿Cómo se llama el payaso favorito de Bart en televisión?", options:["Krusty el Payaso","Actor Secundario Bob","Bobo el Payaso","Rainier Wolfcastle"], answer:0},
+  {q:"¿Cuál es el verdadero nombre del villano Actor Secundario Bob?", options:["Robert Underdunk Terwilliger","Robert Krustofsky","Cecil Terwilliger","Bob Itchy"], answer:0},
+  {q:"¿Cómo se llama el hermano de Actor Secundario Bob?", options:["Cecil Terwilliger","Frank Terwilliger","Robert Jr.","Walt Terwilliger"], answer:0},
+  {q:"¿Cuál es la frase característica de Homer cuando algo le sale mal?", options:["D'oh!","Ay, caramba!","Excelente...","Mmm... rosquillas"], answer:0},
+  {q:"¿Cuál es la frase característica de Bart?", options:["¡Ay, caramba!","D'oh!","Mua ja ja","Cómeme los calzoncillos"], answer:3},
+  {q:"¿Quién dice frecuentemente 'Excelente...' frotándose las manos?", options:["Mr. Burns","Actor Secundario Bob","El Hombre de las Historietas","Moe"], answer:0},
+  {q:"¿Cómo se llama el asistente fiel de Mr. Burns?", options:["Waylon Smithers","Lenny Leonard","Carl Carlson","Frank Grimes"], answer:0},
+  {q:"¿Cómo se llama el programa de televisión favorito de Bart y Lisa con violencia caricaturesca?", options:["Rasca y Pica","Tom y Jerry","Itchy y Mouse","El Show de Krusty"], answer:0},
+  {q:"¿Quién es el creador del programa 'Rasca y Pica' dentro del universo Simpson?", options:["Roger Meyers Jr.","Krusty el Payaso","Gabbo","James L. Brooks"], answer:0},
+  {q:"¿Cómo se llama el alcalde de Springfield?", options:["Joaquín 'Diamond Joe' Quimby","Arthur Spooner","Mayor West","Quincy Adams"], answer:0},
+  {q:"¿Cómo se llama el reverendo de la Primera Iglesia de Springfield?", options:["Reverendo Timothy Lovejoy","Reverendo Alex Hibbert","Padre Sean","Reverendo Bevins"], answer:0},
+  {q:"¿Cómo se llama la esposa del reverendo Lovejoy?", options:["Helen Lovejoy","Maude Flanders","Luann Van Houten","Agnes Skinner"], answer:0},
+  {q:"¿Cómo se llamaba la primera esposa de Ned Flanders, que falleció?", options:["Maude Flanders","Edna Flanders","Helen Flanders","Marge Flanders"], answer:0},
+  {q:"¿Cómo se llaman los hijos de Ned Flanders?", options:["Rod y Todd","Rod y Tim","Todd y Tom","Ned Jr. y Todd"], answer:0},
+  {q:"¿Qué instrumento musical toca Lisa Simpson?", options:["Saxofón","Trompeta","Piano","Violín"], answer:0},
+  {q:"¿Cómo se llama el músico de jazz que es mentor de Lisa?", options:["Bleeding Gums Murphy","Marvin Monroe","Llewellyn Sinclair","Tito Puente"], answer:0},
+  {q:"¿Cómo se llama el gato de la familia Simpson?", options:["Bola de Nieve","Conejo Frank","Pájaro Larry","Pez Blinky"], answer:0},
+  {q:"¿Cómo se llama el pez de tres ojos que se encuentra cerca de la planta nuclear?", options:["Blinky","Tripley","Trinky","Squishy"], answer:0},
+  {q:"¿Cuál es la marca de cerveza favorita de Homer?", options:["Duff","Fudd","Brew 71","Buzz Beer"], answer:0},
+  {q:"¿Cómo se llama el camarero del bar de Moe?", options:["Moe Szyslak","Carl Carlson","Lenny Leonard","Barney Gumble"], answer:0},
+  {q:"¿Cómo se llama el mejor amigo borracho de Homer que suele estar en el bar?", options:["Barney Gumble","Lenny Leonard","Carl Carlson","Snake Jailbird"], answer:0},
+  {q:"¿Quién es el ladrón recurrente de Springfield conocido por asaltar el Kwik-E-Mart?", options:["Snake Jailbird","Actor Secundario Bob","Fat Tony","Duffman"], answer:0},
+  {q:"¿Cómo se llama el jefe de la mafia de Springfield?", options:["Fat Tony","Tony Soprano","Big Tony","Don Vittorio"], answer:0},
+  {q:"¿Cómo se llama el abuelo de Bart y Lisa, padre de Homer?", options:["Abraham Simpson","Herbert Simpson","Mason Simpson","Orville Simpson"], answer:0},
+  {q:"¿Cómo se llama el hermano medio de Homer, un magnate millonario?", options:["Herbert 'Herb' Powell","Hugh Simpson","Frank Powell","Mason Powell"], answer:0}
+];
+
+/* =========================================================
+   NIVEL MEDIO — 50 preguntas sobre episodios concretos
+   ========================================================= */
+const MEDIUM_QUESTIONS = [
+  {q:"¿Qué negocio monta Homer tras perder su empleo en el episodio 'El Quitanieves' (Mr. Plow)?", options:["Una empresa de quitanieves","Una heladería","Un taller mecánico","Una tienda de rosquillas"], answer:0},
+  {q:"¿Cómo se llama el sustituto de maestro del que Lisa se enamora platónicamente?", options:["Mr. Bergstrom","Mr. Largo","Mr. Skinner","Mr. Hoover"], answer:0},
+  {q:"¿Cómo se llama el excéntrico magnate que contrata a Homer y le da una recompensa enorme, incluida una lavadora-secadora en su propia oficina?", options:["Hank Scorpio","Montgomery Burns","Arthur Crandall","Aristóteles Amadopoulos"], answer:0},
+  {q:"¿Qué cómic compran juntos Bart, Milhouse y Martin en 'Tres hombres y un cómic'?", options:["El primer número de Hombre Radioactivo","El primer número de Rasca y Pica","Un cómic firmado por Krusty","Un cómic raro de Bongo"], answer:0},
+  {q:"¿En qué deporte compite Lisa como portera en 'Lisa on Ice'?", options:["Hockey sobre hielo","Patinaje artístico","Curling","Fútbol"], answer:0},
+  {q:"¿Qué intenta saltar Bart con su patineta en 'Bart the Daredevil'?", options:["El Cañón de Springfield","El río de Springfield","La autopista","El tejado de la escuela"], answer:0},
+  {q:"¿A quién le vende Bart su alma por 5 dólares?", options:["A Milhouse","A Nelson","Al Actor Secundario Bob","A Martin"], answer:0},
+  {q:"¿Qué famosa pareja de músicos aparece como invitada cuando Lisa se hace vegetariana?", options:["Paul y Linda McCartney","John y Yoko Lennon","Mick y Bianca Jagger","Elton John y su esposa"], answer:0},
+  {q:"¿Cómo se llama el muñeco rival que compite con Krusty en 'Krusty Gets Kancelled'?", options:["Gabbo","Actor Secundario Mel","Bobo","Dummy Dan"], answer:0},
+  {q:"¿Qué videojuego roba Bart en una tienda en 'Marge Be Not Proud'?", options:["Bonestorm","Mortal Kombat","Death Race","Streetfighter"], answer:0},
+  {q:"¿En qué gira musical participa Homer haciendo de hombre-bala en un espectáculo paralelo?", options:["Hullabalooza","Lollapalooza Tour Springfield","Ozzfest","Festival del Verano"], answer:0},
+  {q:"¿Qué fenómeno astronómico amenaza Springfield en el episodio 'Bart's Comet'?", options:["Un cometa","Un eclipse total","Una lluvia de meteoritos sin nombre","Una tormenta solar"], answer:0},
+  {q:"¿Quién dispara realmente a Mr. Burns en el famoso episodio de dos partes?", options:["Maggie Simpson","Actor Secundario Bob","Smithers","Homer"], answer:0},
+  {q:"¿Quién roba la receta secreta del cóctel de Homer en 'Flaming Moe's'?", options:["Moe","Barney","Carl","Lenny"], answer:0},
+  {q:"¿A qué país llama Bart en una broma telefónica que termina causando un incidente diplomático?", options:["Australia","Canadá","Francia","Japón"], answer:0},
+  {q:"¿Por qué intenta Homer engordar a propósito en 'King-Size Homer'?", options:["Para calificar como discapacitado y trabajar desde casa","Para ganar un concurso de comer","Para una apuesta con Barney","Para evitar ir a una boda"], answer:0},
+  {q:"¿Qué ciudad rival roba el limonero del ayuntamiento de Springfield en 'Lemon of Troy'?", options:["Shelbyville","Capital City","Ogdenville","Ogterville"], answer:0},
+  {q:"¿Qué propuesta legal obliga a Apu a hacerse ciudadano estadounidense en 'Much Apu About Nothing'?", options:["La Propuesta 24","La Propuesta 13","La Ley de Inmigración Local","El Decreto de Springfield"], answer:0},
+  {q:"¿A qué cantante country ayuda Homer a triunfar en 'Colonel Homer'?", options:["Lurleen Lumpkin","Tammy Wynette (versión ficticia)","Dixie Sue","Loretta Spry"], answer:0},
+  {q:"¿Qué músico de jazz, mentor de Lisa, muere en el episodio 'Round Springfield'?", options:["Bleeding Gums Murphy","Llewellyn Sinclair","Tito Puente","Marvin Monroe"], answer:0},
+  {q:"¿Cómo se llama la madre de Homer que reaparece tras años de ausencia en 'Mother Simpson'?", options:["Mona Simpson","Mildred Simpson","Ruth Simpson","Eleanor Simpson"], answer:0},
+  {q:"¿Qué obra protagoniza Marge en versión musical en 'A Streetcar Named Marge'?", options:["Un tranvía llamado Deseo","La Gata sobre el Tejado de Zinc","Hamlet","El Lago de los Cisnes"], answer:0},
+  {q:"¿Cómo se llama el nuevo compañero de trabajo que se frustra tanto con la suerte de Homer que termina muriendo en 'Homer's Enemy'?", options:["Frank Grimes","Lenny Leonard","Carl Carlson","Gil Gunderson"], answer:0},
+  {q:"¿Qué nombre falso usa Skinner para las hamburguesas quemadas en el segmento 'Steamed Hams'?", options:["Hamburguesas al vapor de Albany","Hamburguesas Especiales de Springfield","Carne Asada Casera","Hamburguesas Krusty"], answer:0},
+  {q:"¿Qué famosa escultura usa Marge como ejemplo en su campaña contra la violencia en televisión?", options:["El David de Miguel Ángel","La Venus de Milo","El Pensador de Rodin","La Piedad de Miguel Ángel"], answer:0},
+  {q:"¿A qué parque temático basado en una caricatura visita la familia en 'Itchy & Scratchy Land'?", options:["Itchy & Scratchy Land","Krustylandia","Burnslandia","Duff World"], answer:0},
+  {q:"¿Qué estafador vende a Springfield un monorraíl defectuoso?", options:["Lyle Lanley","Gil Gunderson","Lionel Hutz","Troy McClure"], answer:0},
+  {q:"¿Qué celebridad invitada interpreta a un personaje llamado John que ayuda a Homer a aceptar a Bart en 'Homer's Phobia'?", options:["John Waters","John Travolta","John Goodman","John Lithgow"], answer:0},
+  {q:"¿Por qué remolcan el auto de Homer hasta Nueva York en 'The City of New York vs. Homer Simpson'?", options:["Por estacionarlo en una zona prohibida del World Trade Center","Por exceso de velocidad","Por no pagar peajes","Por robarlo Bart sin saberlo"], answer:0},
+  {q:"¿Qué eslogan repite Homer en su campaña al postularse a Comisionado de Saneamiento?", options:["'No puedo ganar' (Can't Win)","'Basura limpia, mente limpia'","'Springfield brilla conmigo'","'El saneamiento soy yo'"], answer:0},
+  {q:"¿Qué objeto flota molestando a Homer durante su misión espacial en 'Deep Space Homer'?", options:["Una bolsa de papas fritas","Un donut","Un casco suelto","Un peluche"], answer:0},
+  {q:"¿Qué película de terror se parodia en el segmento 'The Shinning' de un especial de Halloween?", options:["El Resplandor","Psicosis","La Profecía","El Exorcista"], answer:0},
+  {q:"¿Qué formato televisivo parodia el episodio especial 'Behind the Laughter'?", options:["Un falso documental musical tipo 'Behind the Music'","Un reality show","Un noticiero","Una entrega de premios"], answer:0},
+  {q:"¿Qué tatuaje se hace Actor Secundario Bob en el pecho en el episodio 'Cape Feare'?", options:["'DIE BART DIE'","'BART FOREVER'","'KRUSTY SUCKS'","'REVENGE'"], answer:0},
+  {q:"¿En qué objeto repetido pisa Actor Secundario Bob una y otra vez (gag recurrente) en 'Cape Feare'?", options:["Rastrillos","Cubos de pintura","Tablas con clavos","Cáscaras de plátano"], answer:0},
+  {q:"¿Qué tradición anual y controvertida, relacionada con golpear serpientes, se celebra en Springfield?", options:["El Día del Apaleamiento (Whacking Day)","El Festival de la Serpiente","La Fiesta del Veneno","El Día de Springfield"], answer:0},
+  {q:"¿Qué pide Homer repetidamente para Lisa durante la huelga sindical de 'Last Exit to Springfield'?", options:["¡Plan dental! ¡Lisa necesita frenos!","¡Más vacaciones para todos!","¡Un aumento de sueldo justo!","¡Seguro médico completo!"], answer:0},
+  {q:"¿De qué delito es acusado falsamente Krusty en 'Krusty Gets Busted'?", options:["Robar el Kwik-E-Mart","Evadir impuestos","Conducir ebrio","Fraude publicitario"], answer:0},
+  {q:"¿Quién resulta ser el verdadero culpable que incriminó a Krusty en ese episodio?", options:["Actor Secundario Bob","El Hombre de las Historietas","Fat Tony","Snake Jailbird"], answer:0},
+  {q:"¿Cómo se llama el cuarteto vocal (barbershop) que forma Homer junto a otros personajes?", options:["The Be Sharps","The Harmonics","The Springfield Singers","The Doo-Wops"], answer:0},
+  {q:"¿Qué insignia intenta conseguir Bart al unirse a los Junior Campers en 'Boy-Scoutz N the Hood'?", options:["Una insignia tras una excursión en canoa","Una insignia de cocina","Una insignia de primeros auxilios","Una insignia de natación"], answer:0},
+  {q:"¿Qué hace el ayuntamiento de Springfield al votar sobre la energía nuclear en 'Two Cars in Every Garage...'?", options:["Eligen entre Mr. Burns y otro candidato a gobernador","Cierran la planta nuclear","Construyen una segunda planta","Prohíben la energía nuclear"], answer:0},
+  {q:"¿Qué hace Marge en el episodio en el que trabaja temporalmente como agente inmobiliaria?", options:["Vende casas en Springfield","Vende seguros","Vende pretzels","Vende maquillaje"], answer:0},
+  {q:"¿Qué objeto extraterrestre cree ver Homer en 'The Springfield Files' (episodio crossover con Expediente X)?", options:["Un supuesto extraterrestre, que en realidad es Mr. Burns","Un ovni de verdad","Una luz en el cielo sin explicación","Un robot de la planta nuclear"], answer:0},
+  {q:"¿Qué hace Bart al ganar popularidad inesperada como mascota/figura escolar en 'Bart Gets Famous'?", options:["Se hace famoso por decir 'No lo sé'","Se hace famoso por un gol decisivo","Se hace famoso por un invento","Se hace famoso por ganar un concurso de talentos"], answer:0},
+  {q:"¿Qué decide hacer Homer al saltarse la misa un domingo en 'Homer the Heretic'?", options:["Quedarse en casa y crear su propia forma de fe personal","Ir a pescar con Flanders","Dormir en la iglesia","Visitar otra religión organizada"], answer:0},
+  {q:"¿Qué carrera de coches infantiles organiza Bart en un episodio centrado en el derby de cajas de madera?", options:["Un derby de patinetas/carritos improvisados","Una carrera de karts oficial","Una carrera de bicicletas BMX","Una carrera de trineos"], answer:0},
+  {q:"¿Qué hace Lisa al convertirse en la primera chica en un equipo de fútbol americano en 'Bart Star'?", options:["Se une como pateadora del equipo","Se une como mariscal de campo","Se une como entrenadora","Se une como animadora"], answer:0},
+  {q:"¿Qué evento provoca que la familia gane una fortuna temporal antes de perderla en el episodio sobre un casino indio?", options:["La apertura de un casino cerca de Springfield","Un premio de lotería","Una herencia de un pariente lejano","Un juicio ganado contra Burns"], answer:0},
+  {q:"¿Qué hace Homer al convertirse brevemente en el dueño de la planta nuclear tras la 'muerte' de Mr. Burns?", options:["Asume el control temporal de la planta","Cierra la planta","La vende a otra empresa","La convierte en un parque"], answer:0}
+];
+
+/* =========================================================
+   NIVEL ALTO — 50 preguntas de fan auténtico
+   ========================================================= */
+const HARD_QUESTIONS = [
+  {q:"¿Qué actor de doblaje original pone la voz a Homer Simpson?", options:["Dan Castellaneta","Hank Azaria","Harry Shearer","Phil Hartman"], answer:0},
+  {q:"¿Qué actriz pone la voz a Marge Simpson?", options:["Julie Kavner","Yeardley Smith","Nancy Cartwright","Tress MacNeille"], answer:0},
+  {q:"¿Qué actriz pone la voz a Bart Simpson?", options:["Nancy Cartwright","Yeardley Smith","Julie Kavner","Pamela Hayden"], answer:0},
+  {q:"¿Qué actriz pone la voz a Lisa Simpson?", options:["Yeardley Smith","Nancy Cartwright","Julie Kavner","Tress MacNeille"], answer:0},
+  {q:"¿Qué actor de doblaje da voz a Mr. Burns, Smithers, Ned Flanders y el director Skinner, entre otros?", options:["Harry Shearer","Hank Azaria","Dan Castellaneta","Pamela Hayden"], answer:0},
+  {q:"¿Qué actor de doblaje da voz a Moe, Krusty, el jefe Wiggum y Apu, entre otros?", options:["Hank Azaria","Harry Shearer","Dan Castellaneta","Pamela Hayden"], answer:0},
+  {q:"¿Cuál es el nombre completo de Bart Simpson?", options:["Bartholomew JoJo Simpson","Bartholomew Jay Simpson","Bartholomew Jacob Simpson","Bartholomew Jedediah Simpson"], answer:0},
+  {q:"¿Cuál es el segundo nombre de Lisa Simpson?", options:["Marie","Marge","Maude","Margaret"], answer:0},
+  {q:"¿Cómo se llama el fundador de Springfield, honrado con una estatua en la plaza del pueblo?", options:["Jebediah Springfield","Cornelius Burns","Hiram Simpson","Ezekiel Springfield"], answer:0},
+  {q:"Según revela Lisa, ¿quién era en realidad Jebediah Springfield?", options:["Un pirata llamado Hans Sprungfeld","Un estafador llamado Silas Hoover","Un granjero sin importancia","Un pariente de los Burns"], answer:0},
+  {q:"¿Cómo se llama la esposa de Apu?", options:["Manjula","Saanvi","Priya","Indira"], answer:0},
+  {q:"¿Cuántos hijos tienen Apu y su esposa?", options:["Ocho (octillizos)","Cuatro","Dos gemelos","Seis"], answer:0},
+  {q:"Como chiste recurrente, ¿cuántos doctorados se dice que tiene Apu?", options:["Ocho","Tres","Uno","Cinco"], answer:0},
+  {q:"¿Cuál es el nombre real de Actor Secundario Mel?", options:["Melvin Van Horne","Mel Pinsky","Melvin Krustofsky","Mel Hutz"], answer:0},
+  {q:"¿Cuál es la dirección de la casa de los Simpson?", options:["742 Evergreen Terrace","742 Maple Street","123 Springfield Ave","456 Elm Street"], answer:0},
+  {q:"¿En qué programa de televisión aparecieron por primera vez Los Simpson, como cortos animados?", options:["The Tracey Ullman Show","Saturday Night Live","In Living Color","The Real Ghostbusters"], answer:0},
+  {q:"¿En qué año aparecieron por primera vez Los Simpson como cortos animados?", options:["1987","1985","1989","1990"], answer:0},
+  {q:"¿Cómo se llama la tienda de artículos para zurdos que regenta Ned Flanders?", options:["El Leftorium","Zurdolandia","La Tienda Zurda","El Rincón Zurdo"], answer:0},
+  {q:"¿Dónde trabajan Patty y Selma, las hermanas de Marge?", options:["En el Departamento de Vehículos Motorizados (DMV)","En el ayuntamiento","En el periódico local","En la oficina de correos"], answer:0},
+  {q:"¿Cuál es el nombre de nacimiento completo de Krusty el Payaso?", options:["Herschel Shmoikel Pinchas Yerucham Krustofsky","Herschel Bartholomew Krustofsky","Herman Yerucham Krustofsky","Hershel Pinchas Schwartz"], answer:0},
+  {q:"¿Cómo se llama la marca de refresco que Mr. Burns intenta lanzar al mercado?", options:["Buzz Cola","Burns Cola","Nuke Soda","Atomic Pop"], answer:0},
+  {q:"¿Con qué frase suele presentarse el actor Troy McClure?", options:["'Quizás me recuerden de...'","'¡Hola a todos!'","'Soy Troy McClure, encantado'","'Aquí estoy de nuevo'"], answer:0},
+  {q:"¿Cuál es el nombre completo del conductor del autobús escolar?", options:["Otto Mann","Otto Disko","Otto Rocker","Otto Mann Jr."], answer:0},
+  {q:"¿Cuál es el nombre completo de Milhouse Van Houten?", options:["Milhouse Mussolini Van Houten","Milhouse Maximilian Van Houten","Milhouse Marion Van Houten","Milhouse Manfred Van Houten"], answer:0},
+  {q:"¿Qué famosa frase dice Ralph Wiggum tras suspender un examen de inglés?", options:["'¿Yo reprobar inglés? ¡Eso es imposible!'","'No me gusta el colegio'","'Mi gato dice hola'","'Soy especial'"], answer:0},
+  {q:"¿Cuál es el verdadero nombre del Hombre de las Historietas?", options:["Jeff Albertson","Jeff Krustofsky","Jeff Van Houten","Jeff Mannheim"], answer:0},
+  {q:"¿En qué estado de Estados Unidos se encuentra oficialmente Springfield, según la serie?", options:["Nunca se revela oficialmente","Ohio","Kentucky","Illinois"], answer:0},
+  {q:"¿Cuál es la frase característica de Disco Stu sobre publicidad?", options:["'Disco Stu no se anuncia'","'Disco Stu siempre baila'","'El disco nunca muere'","'Stu es el rey del disco'"], answer:0},
+  {q:"¿Quién compuso la música del tema principal de la serie?", options:["Danny Elfman","John Williams","Alf Clausen","Hans Zimmer"], answer:0},
+  {q:"¿Qué ciudad real inspiró muchos de los nombres de calles de Springfield?", options:["Portland, Oregon","Los Ángeles, California","Chicago, Illinois","Seattle, Washington"], answer:0},
+  {q:"¿De qué dúo cómico clásico se inspiró Dan Castellaneta para crear el icónico '¡D'oh!'?", options:["Laurel y Hardy (un gesto de James Finlayson)","Abbott y Costello","Los Hermanos Marx","Charlie Chaplin"], answer:0},
+  {q:"¿Qué palabra en inglés forma un anagrama escondido en el nombre 'Bart'?", options:["Brat (mocoso)","Bart (sin anagrama)","Tab","Robe"], answer:0},
+  {q:"¿Qué rasgo distintivo tiene el bebé Maggie Simpson durante casi toda la serie?", options:["Casi nunca habla","Tiene superpoderes","Siempre llora","Habla con acento"], answer:0},
+  {q:"¿Cuál es la única palabra famosa que pronuncia Maggie en un episodio especial de proyección futura?", options:["'Papi'","'Mami'","'Bart'","'No'"], answer:0},
+  {q:"¿Cómo se llama la gata que reemplaza al primer gato de la familia tras morir atropellado?", options:["Bola de Nieve II","Bola de Nieve Jr.","Michi","Bigotes"], answer:0},
+  {q:"¿Qué especie de animal son, respectivamente, Rasca y Pica?", options:["Pica es un gato y Rasca es un ratón","Ambos son gatos","Ambos son ratones","Rasca es un perro y Pica un gato"], answer:0},
+  {q:"¿Cómo se conoce al personaje disfrazado que promociona la cerveza Duff en eventos?", options:["Duffman","Duff Guy","Mr. Duff","Captain Duff"], answer:0},
+  {q:"¿Cómo se llama la gran ciudad rival de Springfield, distinta de Shelbyville?", options:["Capital City","Ogdenville","North Haverbrook","Springfield Sur"], answer:0},
+  {q:"¿Cómo se llamaban en la vida real los padres de Matt Groening, creador de la serie?", options:["Homer y Marge","Abraham y Mona","George y Marge","Homer y Mona"], answer:0},
+  {q:"¿Cómo se llamaba en la vida real la hermana de Matt Groening, inspiración del nombre de Lisa?", options:["Lisa","Maggie","Patty","Marge"], answer:0},
+  {q:"¿En qué año se estrenó Los Simpson como serie independiente de media hora?", options:["1989","1987","1990","1992"], answer:0},
+  {q:"¿En qué cadena de televisión se emite Los Simpson desde su estreno?", options:["Fox","NBC","ABC","CBS"], answer:0},
+  {q:"¿Cómo se llama la productora detrás de Los Simpson, fundada por James L. Brooks?", options:["Gracie Films","20th Television","Bongo Comics","Klasky Csupo"], answer:0},
+  {q:"¿Cuál de estos productores ejecutivos originales NO es uno de los tres creadores principales reconocidos de la serie?", options:["Ninguno: Groening, Brooks y Simon son los tres reconocidos","Matt Groening","James L. Brooks","Sam Simon"], answer:0},
+  {q:"¿Quién, junto a Groening y Brooks, es reconocido como co-desarrollador original de la serie?", options:["Sam Simon","Al Jean","Mike Reiss","Conan O'Brien"], answer:0},
+  {q:"¿Qué frase repite frecuentemente El Hombre de las Historietas para quejarse de algo decepcionante?", options:["'Peor. Episodio. Jamás.'","'Esto es indignante.'","'No lo compro.'","'Vergonzoso.'"], answer:0},
+  {q:"¿Cuál es el apellido de soltera de Marge y de sus hermanas Patty y Selma?", options:["Bouvier","Krabappel","Hoover","Bouvieu"], answer:0},
+  {q:"¿A qué club secreto, que parodia sociedades como los masones, pertenecen muchos hombres prominentes de Springfield?", options:["Los Canteros (Stonecutters)","La Logia Amarilla","El Club Burns","Los Hermanos del Donut"], answer:0},
+  {q:"¿Cuál era el puesto de Actor Secundario Bob antes de intentar incriminar y asesinar a Krusty?", options:["Era su asistente en el show de Krusty","Era un payaso rival","Era guionista del show","Era productor del canal"], answer:0},
+  {q:"¿De qué nacionalidad es originalmente Willie, el conserje de la escuela?", options:["Escocés","Irlandés","Galés","Inglés"], answer:0}
+];
+
+const LEVELS = {
+  low: { label: "Nivel bajo", questions: LOW_QUESTIONS },
+  medium: { label: "Nivel medio", questions: MEDIUM_QUESTIONS },
+  high: { label: "Nivel alto", questions: HARD_QUESTIONS }
+};
+
+/* =========================================================
+   2) ESTADO DEL QUIZ (variables que van cambiando)
+   ========================================================= */
+let currentIndex = 0;
+let correctCount = 0;
+let selectedOptionIndex = null;
+let shuffledQuestions = [];
+let currentLevelKey = null;
+
+const introScreen = document.getElementById('intro-screen');
+const quizScreen = document.getElementById('quiz-screen');
+const resultScreen = document.getElementById('result-screen');
+const backBtn = document.getElementById('back-btn');
+const nextBtn = document.getElementById('next-btn');
+const retryBtn = document.getElementById('retry-btn');
+const questionText = document.getElementById('question-text');
+const optionsContainer = document.getElementById('options-container');
+const progressText = document.getElementById('progress-text');
+const scoreText = document.getElementById('score-text');
+const progressFill = document.getElementById('progress-fill');
+const scoreNumber = document.getElementById('score-number');
+const resultHeadline = document.getElementById('result-headline');
+const resultDetail = document.getElementById('result-detail');
+
+/* =========================================================
+   3) FUNCIONES
+   ========================================================= */
+function shuffleArray(array){
+  const copy = [...array];
+  for(let i = copy.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function startQuiz(levelKey){
+  currentLevelKey = levelKey;
+  currentIndex = 0;
+  correctCount = 0;
+  shuffledQuestions = shuffleArray(LEVELS[levelKey].questions);
+  introScreen.classList.add('hidden');
+  resultScreen.classList.add('hidden');
+  quizScreen.classList.remove('hidden');
+  renderQuestion();
+}
+
+function goToLevelSelect(){
+  quizScreen.classList.add('hidden');
+  resultScreen.classList.add('hidden');
+  introScreen.classList.remove('hidden');
+}
+
+let currentOptions = [];
+let currentCorrectText = '';
+
+function renderQuestion(){
+  selectedOptionIndex = null;
+  nextBtn.disabled = true;
+  const total = shuffledQuestions.length;
+  const item = shuffledQuestions[currentIndex];
+
+  progressText.textContent = `Pregunta ${currentIndex + 1} de ${total}`;
+  scoreText.textContent = `Aciertos: ${correctCount}`;
+  progressFill.style.width = `${(currentIndex / total) * 100}%`;
+
+  questionText.textContent = item.q;
+  optionsContainer.innerHTML = '';
+
+  // Mezclamos las opciones de ESTA pregunta para que la correcta
+  // no esté siempre en la misma posición
+  currentCorrectText = item.options[item.answer];
+  currentOptions = shuffleArray(item.options);
+
+  currentOptions.forEach((optionLabel, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = optionLabel;
+    btn.addEventListener('click', () => selectOption(idx));
+    optionsContainer.appendChild(btn);
+  });
+}
+
+function selectOption(idx){
+  if(selectedOptionIndex !== null) return;
+  selectedOptionIndex = idx;
+
+  const optionButtons = optionsContainer.querySelectorAll('.option');
+
+  optionButtons.forEach((btn, i) => {
+    btn.disabled = true;
+    if(currentOptions[i] === currentCorrectText){
+      btn.classList.add('correct');
+    } else if(i === idx){
+      btn.classList.add('incorrect');
+    }
+  });
+
+  if(currentOptions[idx] === currentCorrectText){
+    correctCount++;
+    scoreText.textContent = `Aciertos: ${correctCount}`;
+  }
+
+  nextBtn.disabled = false;
+}
+
+function nextQuestion(){
+  currentIndex++;
+  if(currentIndex < shuffledQuestions.length){
+    renderQuestion();
+  } else {
+    showResult();
+  }
+}
+
+function showResult(){
+  quizScreen.classList.add('hidden');
+  resultScreen.classList.remove('hidden');
+
+  const total = shuffledQuestions.length;
+  const grade = Math.round((correctCount / total) * 10 * 10) / 10;
+  const finalGrade = Math.max(1, grade);
+
+  scoreNumber.textContent = `${finalGrade} / 10`;
+  resultDetail.textContent = `Acertaste ${correctCount} de ${total} preguntas.`;
+
+  if(finalGrade >= 9){
+    resultHeadline.textContent = '¡Eres todo un experto de Springfield! 🍩';
+  } else if(finalGrade >= 7){
+    resultHeadline.textContent = '¡Muy bien! Conoces bastante la serie.';
+  } else if(finalGrade >= 5){
+    resultHeadline.textContent = 'Nada mal, pero te falta ver algunas temporadas.';
+  } else {
+    resultHeadline.textContent = "D'oh! Toca un maratón de Los Simpson.";
+  }
+}
+
+/* =========================================================
+   4) CONEXIÓN DE BOTONES
+   ========================================================= */
+document.querySelectorAll('.level-card').forEach(card => {
+  card.addEventListener('click', () => startQuiz(card.dataset.level));
+});
+backBtn.addEventListener('click', goToLevelSelect);
+nextBtn.addEventListener('click', nextQuestion);
+retryBtn.addEventListener('click', () => startQuiz(currentLevelKey));
+
+</script>
+</body>
+</html>
